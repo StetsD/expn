@@ -21,6 +21,14 @@ app.get('/', function(req, res){
 	res.render('home');
 });
 
+app.get('/api/lala', function(req, res){
+	var tours = [
+		{id: 0, name: 'Река Худ', price: 99},
+		{id: 1, name: 'Орегон Коуст', price: 149}
+	];
+	res.json(tours);
+})
+
 app.get('/tours/hood-river', function(req, res){
 	res.render('tours/hood-river');
 });
