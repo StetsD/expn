@@ -4,8 +4,11 @@
   "description": "",
   "main": "meadowlark.js",
   "dependencies": {
+    "body-parser": "^1.17.2",
+    "cookie-parser": "^1.4.3",
     "express": "^3.21.2",
     "express-handlebars": "^3.0.0",
+    "formidable": "^1.1.1",
     "mocha": "^3.4.1"
   },
   "devDependencies": {
