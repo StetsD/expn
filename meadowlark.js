@@ -26,6 +26,51 @@ app.use(require('express-session')({
 	saveUninitialized: false,
 	secret: credentials.cookieSecret
 }));
+switch (app.get('env')) {
+	case 'development':
+		app.use(require('morgan')('dev'));
+		break;
+	case 'production':
+		app.use(require('express-logger'))({
+			path: __dirname + '/log/requests.log'
+		});
+		break;
+	default:
+	break;
+}
+
+app.use(function(req, res, next){
+	var domain = require('domain').create();
+	domain.on('error', function(err){
+		console.error('Перехвачена ошибка\n', err.stack);
+		try{
+			setTimeout(function(){
+				console.error('Отказобезопасный останов');
+				process.exit(1)
+			}, 5000);
+
+			var worker = require('cluster').worker;
+			if(worker) worker.disconnect();
+			server.close();
+
+			try{
+				next(err);
+			}catch(err){
+				console.error('Сбой механизма обработки ошибок', err.stack);
+				res.statusCode = 500;
+				res.setHeader('content-type', 'text/plain');
+				res.end('Ошибка сервера');
+			}
+
+		}catch(err){
+			console.error('Не могу отправить ответ 500', err.stack);
+		}
+	});
+
+	domain.add(req);
+	domain.add(res);
+	domain.run(next);
+});
 
 app.use(require('./lib/tourRequiresWaiver'));
 app.use(cartValidation.checkWaivers);
@@ -109,15 +154,20 @@ app.get('/about', function(req, res) {
 	});
 });
 
+app.get('/epic-fail', function(req, res){
+	process.nextTick(function(){
+		throw new Error('Allahu Akbar');
+	});
+})
+
 app.use(function(req, res, next){
 	res.status(404);
 	res.render('404');
 });
 
 app.use(function(err, req, res, next){
-	console.log(err.stack);
-	res.status(500);
-	res.render('500');
+	console.error(err.stack);
+	res.status(500).render('500');
 });
 
 app.listen(app.get('port'), function(){
